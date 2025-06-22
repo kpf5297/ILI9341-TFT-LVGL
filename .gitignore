@@ -1,0 +1,12 @@
+*.o
+*.elf
+*.bin
+*.hex
+.vscode/
+.settings/
+build/
+Debug/
+Release/
+.cproject
+.project
+
