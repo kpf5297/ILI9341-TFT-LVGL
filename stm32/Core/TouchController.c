@@ -1,4 +1,7 @@
-// TouchController.c ― LVGL ↔ XPT2046 glue + 4-point on-screen calibration
+/**
+ * @file TouchController.c
+ * @brief LVGL input driver for the XPT2046 touch controller.
+ */
 #include "TouchController.h"
 #include "XPT2046.h"
 #include "main.h"          /* for hspi2, huart2 */

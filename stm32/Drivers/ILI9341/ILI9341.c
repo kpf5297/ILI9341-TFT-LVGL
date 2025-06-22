@@ -1,3 +1,7 @@
+/**
+ * @file ILI9341.c
+ * @brief Simple SPI driver for the ILI9341 TFT controller.
+ */
 #include "ILI9341.h"
 #include "main.h"
 
@@ -12,10 +16,17 @@ extern SPI_HandleTypeDef ILI9341_SPI;
 #define RESET_LOW()  HAL_GPIO_WritePin(ILI9341_RESET_PORT, ILI9341_RESET_PIN, GPIO_PIN_RESET)
 #define RESET_HIGH() HAL_GPIO_WritePin(ILI9341_RESET_PORT, ILI9341_RESET_PIN, GPIO_PIN_SET)
 
+/**
+ * @brief Transmit a raw byte sequence over SPI.
+ *
+ * @param data Pointer to the data to send
+ * @param size Number of bytes to transmit
+ */
 static void ILI9341_Write(uint8_t *data, uint16_t size) {
     HAL_SPI_Transmit(&ILI9341_SPI, data, size, HAL_MAX_DELAY);
 }
 
+/** Send a command byte to the controller */
 void ILI9341_WriteCommand(uint8_t cmd) {
     DC_LOW();
     CS_LOW();
@@ -23,6 +34,7 @@ void ILI9341_WriteCommand(uint8_t cmd) {
     CS_HIGH();
 }
 
+/** Send a single data byte */
 void ILI9341_WriteData(uint8_t data) {
     DC_HIGH();
     CS_LOW();
@@ -30,6 +42,7 @@ void ILI9341_WriteData(uint8_t data) {
     CS_HIGH();
 }
 
+/** Send two bytes of data */
 void ILI9341_WriteData16(uint16_t data) {
     uint8_t buf[2] = {data >> 8, data & 0xFF};
     DC_HIGH();
@@ -38,6 +51,7 @@ void ILI9341_WriteData16(uint16_t data) {
     CS_HIGH();
 }
 
+/** Toggle the reset line */
 void ILI9341_Reset(void) {
     RESET_LOW();
     HAL_Delay(20);
@@ -45,6 +59,7 @@ void ILI9341_Reset(void) {
     HAL_Delay(150);
 }
 
+/** Initialize the controller with the recommended sequence */
 void ILI9341_Init(void) {
     ILI9341_Reset();
 
@@ -123,6 +138,7 @@ void ILI9341_Init(void) {
     ILI9341_SetRotation(3);
 }
 
+/** Fill the entire display with a color */
 void ILI9341_FillScreen(uint16_t color) {
     uint8_t hi = color >> 8;
     uint8_t lo = color & 0xFF;
@@ -150,6 +166,7 @@ void ILI9341_FillScreen(uint16_t color) {
     CS_HIGH();
 }
 
+/** Configure display orientation */
 void ILI9341_SetRotation(uint8_t m)
 {
     ILI9341_WriteCommand(0x36);
@@ -170,7 +187,9 @@ void ILI9341_SetRotation(uint8_t m)
 }
 
 
-// LVGL
+// LVGL helpers
+
+/** Set drawing area in GRAM */
 void ILI9341_SetWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 {
     ILI9341_WriteCommand(0x2A);
@@ -188,6 +207,7 @@ void ILI9341_SetWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
     ILI9341_WriteCommand(0x2C);
 }
 
+/** Write a bitmap to the display */
 void ILI9341_DrawBitmap(uint16_t w, uint16_t h, uint8_t *s)
 {
     ILI9341_WriteCommand(0x2C); // Memory write
@@ -197,6 +217,7 @@ void ILI9341_DrawBitmap(uint16_t w, uint16_t h, uint8_t *s)
     CS_HIGH();
 }
 
+/** Write a bitmap using DMA */
 void ILI9341_DrawBitmapDMA(uint16_t w, uint16_t h, uint8_t *s)
 {
     ILI9341_WriteCommand(0x2C); // Memory write
@@ -204,4 +225,5 @@ void ILI9341_DrawBitmapDMA(uint16_t w, uint16_t h, uint8_t *s)
     CS_LOW();
     HAL_SPI_Transmit_DMA(&ILI9341_SPI, s, w * h * 2);
 }
+
 

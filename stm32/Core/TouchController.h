@@ -1,4 +1,7 @@
-// TouchController.h
+/**
+ * @file TouchController.h
+ * @brief Calibration and input driver helpers.
+ */
 #ifndef TOUCH_CONTROLLER_H_
 #define TOUCH_CONTROLLER_H_
 
@@ -26,3 +29,4 @@ void touch_calibrate(void);
 #endif
 
 #endif /* TOUCH_CONTROLLER_H_ */
+
