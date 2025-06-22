@@ -1,8 +1,6 @@
-/*
- * LCDController.c
- *
- *  Created on: May 25, 2025
- *      Author: kevinfox
+/**
+ * @file LCDController.c
+ * @brief LVGL display glue for the ILI9341 driver.
  */
 
 /*********************
@@ -61,32 +59,12 @@ void lv_port_disp_init(void)
 //    lv_display_t * disp = lv_display_create(MY_DISP_HOR_RES, MY_DISP_VER_RES);
     disp = lv_display_create(MY_DISP_HOR_RES, MY_DISP_VER_RES);
     lv_display_set_flush_cb(disp, disp_flush);
+    /* Use two small buffers so DMA can flush while LVGL prepares the next area */
+    LV_ATTRIBUTE_MEM_ALIGN static uint8_t buf1[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
+    LV_ATTRIBUTE_MEM_ALIGN static uint8_t buf2[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
+    lv_display_set_buffers(disp, buf1, buf2, sizeof(buf1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
-    /* Example 1
-     * One buffer for partial rendering*/
-//    LV_ATTRIBUTE_MEM_ALIGN
-//    static uint8_t buf_1_1[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];            /*A buffer for 10 rows*/
-//    lv_display_set_buffers(disp, buf_1_1, NULL, sizeof(buf_1_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
-    /* Example 2
-     * Two buffers for partial rendering
-     * In flush_cb DMA or similar hardware should be used to update the display in the background.*/
-    LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_2_1[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
-
-    LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_2_2[MY_DISP_HOR_RES * 10 * BYTE_PER_PIXEL];
-    lv_display_set_buffers(disp, buf_2_1, buf_2_2, sizeof(buf_2_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-    /* Example 3
-     * Two buffers screen sized buffer for double buffering.
-     * Both LV_DISPLAY_RENDER_MODE_DIRECT and LV_DISPLAY_RENDER_MODE_FULL works, see their comments*/
-//    LV_ATTRIBUTE_MEM_ALIGN
-//    static uint8_t buf_3_1[MY_DISP_HOR_RES * MY_DISP_VER_RES * BYTE_PER_PIXEL];
-//
-//    LV_ATTRIBUTE_MEM_ALIGN
-//    static uint8_t buf_3_2[MY_DISP_HOR_RES * MY_DISP_VER_RES * BYTE_PER_PIXEL];
-//    lv_display_set_buffers(disp, buf_3_1, buf_3_2, sizeof(buf_3_1), LV_DISPLAY_RENDER_MODE_DIRECT);
 
 }
 
@@ -123,19 +101,6 @@ void disp_disable_update(void)
  *'lv_display_flush_ready()' has to be called when it's finished.*/
 static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t * px_map)
 {
-//    if(disp_flush_enabled) {
-//        /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
-//
-//        int32_t x;
-//        int32_t y;
-//        for(y = area->y1; y <= area->y2; y++) {
-//            for(x = area->x1; x <= area->x2; x++) {
-//                /*Put a pixel to the display. For example:*/
-//                /*put_px(x, y, *px_map)*/
-//                px_map++;
-//            }
-//        }
-//    }
     if(!disp_flush_enabled) {
         lv_display_flush_ready(disp_drv);
         return;
@@ -149,9 +114,9 @@ static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t 
 
     lv_color_t *color_p = (lv_color_t *) px_map;
 
-//    ILI9341_DrawBitmap(width, height, (uint8_t *) color_p);
     ILI9341_DrawBitmapDMA(width, height, (uint8_t *) color_p);
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/
     lv_display_flush_ready(disp_drv);
 }
+

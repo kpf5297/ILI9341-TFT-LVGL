@@ -1,8 +1,6 @@
-/*
- * LCDController.h
- *
- *  Created on: May 25, 2025
- *      Author: kevinfox
+/**
+ * @file LCDController.h
+ * @brief LVGL display interface for the ILI9341.
  */
 
 #ifndef INC_LCDCONTROLLER_H_
@@ -50,3 +48,4 @@ void disp_disable_update(void);
 
 
 #endif /* INC_LCDCONTROLLER_H_ */
+
