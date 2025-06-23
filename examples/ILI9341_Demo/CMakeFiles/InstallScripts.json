@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/kevinfox/Code/ILI9341_Demo/cmake_install.cmake",
+		"/Users/kevinfox/Code/ILI9341_Demo/cmake/stm32cubemx/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
