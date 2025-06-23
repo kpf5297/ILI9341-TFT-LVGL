@@ -1,4 +1,3 @@
-cat <<EOF > README.md
 # ILI9341 TFT Display with XPT2046 Touchscreen (STM32 + LVGL)
 
 This project provides lightweight display and touch drivers for the 2.8" ILI9341 SPI display with XPT2046 touchscreen, including LVGL integration.
@@ -39,4 +38,3 @@ touch_calibrate(); // optional
 
 MIT License © 2025 Kevin Fox
 
-EOF
