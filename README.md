@@ -77,5 +77,5 @@ In `lv_conf.h`:
 
 ## License
 
-MIT License © 2025 Kevin Fox
+MIT License
 
