@@ -45,8 +45,8 @@
 #define DRV_TOUCH_IRQ_EXTI_LINE      4u          /* EXTI line number for glue routing */
 
 /* Touch calibration defaults (overwritten at runtime by
- * XPT2046_SetCalibration / lv_xpt2046_calibrate once you've run a
- * calibration pass for your specific panel). */
+ * XPT2046_SetCalibration once you've run a calibration pass for your
+ * specific panel; the calibration UI itself is the app's job). */
 #define DRV_TOUCH_RAW_X_MIN          262u
 #define DRV_TOUCH_RAW_X_MAX          1872u
 #define DRV_TOUCH_RAW_Y_MIN          230u

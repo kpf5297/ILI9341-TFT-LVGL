@@ -66,8 +66,7 @@ void touchgfxDisplayDriverTransmitBlock(const uint8_t *pixels, uint16_t x, uint1
     /* TouchGFX's LCD16bpp renders native-endian RGB565 (low byte first in
      * memory), but the panel expects each pixel's high byte first over SPI.
      * ILI9341_Flush{,Async}() transmit the buffer byte-for-byte with no
-     * reordering, so the swap has to happen here -- this is the TouchGFX-side
-     * equivalent of LV_COLOR_16_SWAP in the LVGL build's lv_conf.h. Safe to
+     * reordering, so the swap has to happen here. Safe to
      * do in place: `pixels` points into a writable block-allocator buffer
      * that TouchGFX won't touch again until the transfer-complete callback
      * frees it. */

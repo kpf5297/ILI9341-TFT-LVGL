@@ -188,9 +188,9 @@ static void ili_tx_done_hook(void *ctx)
     /* Bus lock release from ISR context: valid for the mutex backends in this
      * tree (bare-metal critical section, and the host mock), matching the
      * plan's required async-flush contract. A CMSIS-RTOS2 mutex is not
-     * generally ISR-safe; if that matters for your RTOS, prefer
-     * DRV_DROP_FRAME_IF_BUSY policies that avoid contending the lock from
-     * an ISR in the first place. */
+     * generally ISR-safe; if that matters for your RTOS, prefer a GUI-side
+     * policy that skips the flush while ILI9341_FlushBusy() is true rather
+     * than contending the lock from an ISR. */
     drv_spi_bus_unlock(d->bus);
 
     if (d->done_cb != NULL) {

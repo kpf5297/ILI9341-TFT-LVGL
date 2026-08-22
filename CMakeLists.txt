@@ -52,7 +52,7 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/Profiles/${PROFILE}/cmake/touchgfx/CMakeLi
     unset(_REPO_SOURCE_DIR)
 endif()
 
-# App/ — tft_drivers, LVGL, and the application itself.
+# App/ — tft_drivers and the application itself.
 add_subdirectory(App)
 
 # Hand-added CMSIS-RTOS2 shim not part of CubeMX's generated file list (see

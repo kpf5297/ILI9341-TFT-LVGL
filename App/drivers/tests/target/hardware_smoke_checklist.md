@@ -22,7 +22,7 @@ observe real SPI timing, DMA completion, or panel/touch behavior.
 
 2. Display output
    - Backlight/display powers on.
-   - LVGL content renders with correct orientation for `DRV_DISP_ROTATION`.
+   - TouchGFX content renders with correct orientation for `DRV_DISP_ROTATION`.
    - No persistent tearing or corrupted frame regions (checks the DMA
      chunking and BSY-clear fix from Phase 2 under real SPI timing).
 
@@ -35,7 +35,7 @@ observe real SPI timing, DMA completion, or panel/touch behavior.
      analytically and need real-hardware confirmation here).
 
 4. Calibration behavior
-   - Run `lv_xpt2046_calibrate()` (or your app's calibration entry point).
+   - Run your app's calibration entry point (raw corner capture).
    - Verify improved touch accuracy after calibration.
    - Verify the calibration values persist correctly via
      `XPT2046_SetCalibration`/`XPT2046_GetCalibration` for the session.
@@ -48,15 +48,15 @@ observe real SPI timing, DMA completion, or panel/touch behavior.
    discipline on a shared SPI bus)
    - Configure `DRV_TOUCH_SPI_HANDLE == DRV_DISP_SPI_HANDLE` (shared bus).
    - Run a second task that calls `XPT2046_ReadRaw`/`ReadPoint` in a tight
-     loop while LVGL animates continuously, for 5 minutes.
+     loop while the GUI animates continuously, for 5 minutes.
    - Verify no visual corruption, no touch misreads, no deadlock — the bus
      lock must serialize display flushes and touch reads without either
      starving the other.
 
-7. DMA soak with blocking policy (new — validates the non-drop-frame path)
-   - Build with `DRV_DROP_FRAME_IF_BUSY=0`.
+7. DMA soak under sustained redraw (validates the async flush path)
+   - Force a full-screen redraw every frame (no partial-region skipping).
    - Run the same animation/stress workload as #6 for 5+ minutes.
-   - Verify no stalled-transfer double `lv_display_flush_ready()` calls
+   - Verify no stalled transfer leaves `ILI9341_FlushBusy()` stuck true
      (would show up as skipped/garbled frames) and no permanent frame
      freeze on a timeout.
 

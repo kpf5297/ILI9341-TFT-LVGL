@@ -3,8 +3,7 @@
 Layered display and touch drivers for the 2.8" ILI9341 SPI TFT with XPT2046
 resistive touchscreen. Layer 0 (OS abstraction + SPI/GPIO ports) and Layer 1
 (chip drivers) are CubeMX-free and work identically on bare metal or
-CMSIS-RTOS2/FreeRTOS; an optional LVGL adapter (and TouchGFX integration
-notes) sit on top.
+CMSIS-RTOS2/FreeRTOS; TouchGFX integration notes sit on top.
 
 This directory is the library itself, vendored under `App/drivers/` of the
 reference project one level up (see the [root README](../../README.md) for
@@ -13,7 +12,7 @@ how to build and run that project). Drop this same directory into
 about the project it's vendored into except through `drv_constants.h`.
 
 **Tested on:** STM32F446RE (Nucleo-64)
-**LVGL version:** 9.2.x
+**GUI framework:** TouchGFX (see `adapters/touchgfx/README.md`)
 **HAL:** STM32 HAL (CubeMX-generated), reached only through `drv_constants.h`
 
 ---
@@ -23,9 +22,9 @@ about the project it's vendored into except through `drv_constants.h`.
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  Application (bare-metal loop / FreeRTOS tasks)           │
-├─────────────────────────────┬────────────────────────────┤
-│  adapters/lvgl (optional)   │  adapters/touchgfx (opt.)  │  Layer 2
-├─────────────────────────────┴────────────────────────────┤
+├───────────────────────────────────────────────────────────┤
+│  adapters/touchgfx (GUI glue, generated per project)      │  Layer 2
+├───────────────────────────────────────────────────────────┤
 │  ili9341.c        xpt2046.c                               │  Layer 1 (chip drivers)
 ├───────────────────────────────────────────────────────────┤
 │  drv_spi  drv_gpio  drv_os  drv_isr                       │  Layer 0 (ports + OSAL)
@@ -37,7 +36,8 @@ about the project it's vendored into except through `drv_constants.h`.
 **Include-direction rule:** Layer 1 includes only Layer 0 headers + libc.
 Layer 0 port implementations (`src/port/`, `src/drv_setup.c`,
 `src/drv_isr_glue.c`) are the only files that see the STM32 HAL, and only via
-`drv_config.h`. No layer includes `lvgl.h` except `adapters/lvgl/`. This is
+`drv_config.h`. No layer includes CubeMX headers except through
+`drv_constants.h`. This is
 enforced by `cmake/layering_check_script.cmake`, wired into both the
 `layering_check` build target and CTest.
 
@@ -53,7 +53,6 @@ App/drivers/                          # this directory — the tft_drivers libra
 │   ├── drv_config.h                  # contract gate: pulls in drv_constants.h
 │   ├── drv_isr.h                     # ISR entry points the app routes to
 │   ├── drv_setup.h                   # one-call bring-up (DRV_Setup)
-│   ├── drv_policy.h                  # LVGL adapter flush-policy knobs
 │   ├── ili9341.h / xpt2046.h         # Layer 1 chip drivers
 ├── src/
 │   ├── os/                           # drv_os_cmsis2.c / drv_os_baremetal.c
@@ -62,7 +61,6 @@ App/drivers/                          # this directory — the tft_drivers libra
 │   ├── drv_setup.c                   # \
 │   └── drv_isr_glue.c                # / only files that reference DRV_* macros
 ├── adapters/
-│   ├── lvgl/                         # lv_ili9341, lv_xpt2046, lv_touch_calibrate
 │   └── touchgfx/README.md            # integration notes + skeleton (no compiled code)
 ├── templates/drv_constants_template.h  # copy this to App/drv_constants.h
 ├── tests/
@@ -82,15 +80,14 @@ project consuming this library should follow:
 │   ├── CMakeLists.txt
 │   ├── drv_constants.h               # THE connector: DRV_* macros → CubeMX symbols
 │   ├── app_main.c / app_main.h       # App_Init() / App_CreateTasks(), called from main.c
-│   ├── gui/                          # LVGL screens (or a TouchGFX Application)
-│   ├── lvgl/                         # LVGL source + lv_conf.h (vendored, not CubeMX output)
 │   └── drivers/                      # this directory (submodule or copy)
 └── Profiles/
     └── board_1/                      # 100% CubeMX-generated output for this board
         ├── board_1.ioc
         ├── Core/ (Inc, Src)          # main.c, stm32f4xx_it.c, FreeRTOSConfig.h, ...
         ├── Drivers/ (CMSIS, STM32F4xx_HAL_Driver)
-        ├── Middlewares/ (FreeRTOS)
+        ├── Middlewares/ (FreeRTOS, ST/touchgfx)
+        ├── TouchGFX/                 # TouchGFX Designer project + target HAL glue
         ├── cmake/stm32cubemx/CMakeLists.txt
         ├── startup_stm32f446xx.s
         └── STM32F446XX_FLASH.ld
@@ -124,7 +121,7 @@ time.
 | `DRV_TOUCH_SPI_HANDLE` | May equal `DRV_DISP_SPI_HANDLE` (shared bus — the driver serializes access) |
 | `DRV_TOUCH_CS_PORT` / `_PIN`, `_IRQ_PORT` / `_PIN` | Touch GPIO |
 | `DRV_TOUCH_IRQ_EXTI_LINE` | EXTI line number, for glue routing |
-| `DRV_TOUCH_RAW_X_MIN/MAX`, `_Y_MIN/MAX` | Calibration defaults (overwritten at runtime by `lv_xpt2046_calibrate`) |
+| `DRV_TOUCH_RAW_X_MIN/MAX`, `_Y_MIN/MAX` | Calibration defaults (overwritten at runtime by `XPT2046_SetCalibration`) |
 
 `drv_setup.c` and `drv_isr_glue.c` are the **only** library sources that
 reference these macros — everything else in Layers 0/1 consumes plain config
@@ -160,12 +157,10 @@ target_include_directories(drv_platform INTERFACE
 )
 target_compile_definitions(drv_platform INTERFACE STM32F446xx USE_HAL_DRIVER)
 
-add_subdirectory(path/to/ILI9341-TFT-LVGL tft_drivers)
+add_subdirectory(path/to/ILI9341-TFT-TouchGFX tft_drivers)
 ```
 
-If `DRV_ADAPTER_LVGL=ON`, make sure a target named `lvgl` already exists
-before the `add_subdirectory()` call — `tft_drivers` links against it, it
-does not create it. See `../CMakeLists.txt` (the `App/` directory of the
+See `../CMakeLists.txt` (the `App/` directory of the
 reference project this library is vendored into) for a complete working
 example.
 
@@ -175,10 +170,7 @@ example.
 | --- | --- | --- |
 | `DRV_USE_CMSIS_RTOS2` | `ON` | CMSIS-RTOS2 OSAL backend; `OFF` builds the bare-metal backend instead |
 | `DRV_PROVIDE_HAL_CALLBACKS` | `ON` | Compile the default `HAL_SPI_TxCpltCallback`/`HAL_GPIO_EXTI_Callback` glue |
-| `DRV_ADAPTER_LVGL` | `OFF` | Compile `adapters/lvgl/` and link against the app's `lvgl` target |
-| `DRV_DROP_FRAME_IF_BUSY` | `ON` | LVGL adapter drops a frame instead of blocking when a flush is already in flight |
 | `DRV_SPI_TIMEOUT_MS` | `100` | Blocking SPI transfer timeout |
-| `DRV_DMA_BUSY_WAIT_TIMEOUT_MS` | `200` | LVGL flush busy-wait timeout when `DRV_DROP_FRAME_IF_BUSY=OFF` |
 | `DRV_SPI_MAX_BUSES` | `2` | Max concurrent `drv_spi_bus_t` objects |
 | `ILI9341_MAX_LINE_PX` | `320` | Caps `ILI9341_FillScreen`'s stack line buffer |
 
@@ -193,33 +185,36 @@ example.
 2. **[Code]** Copy `templates/drv_constants_template.h` to
    `App/drv_constants.h` and fill in every macro for your board.
 3. **[Code]** Set up `App/CMakeLists.txt` with the `drv_platform` contract
-   above, `add_subdirectory(lvgl)` if using LVGL, then
-   `add_subdirectory(<tft_drivers repo>)`.
+   above, then `add_subdirectory(<tft_drivers repo>)`.
 4. **[Code]** Write `App/app_main.c` / `.h`:
 
 ```c
 #include "drv/drv_setup.h"
-#include "lv_ili9341.h"
-#include "lv_xpt2046.h"
+#include "cmsis_os2.h"
 
-static uint8_t buf1[DRV_DISP_HOR_RES * 10 * 2];
-static uint8_t buf2[DRV_DISP_HOR_RES * 10 * 2];
+/* TouchGFX entry points — plain C symbols, so App/ needs no TouchGFX
+ * include paths. */
+void MX_TouchGFX_Process(void);
+void touchgfxSignalVSync(void);
+void TouchGFXDisplayDriver_Init(void);
 
-void App_Init(void)
+static void touchgfx_task(void *arg)
 {
-    lv_init();
-    DRV_Setup();                                          /* bring up SPI buses + both chips */
-
-    lv_display_t *disp = lv_ili9341_create(DRV_GetDisplay(), buf1, buf2, sizeof(buf1));
-    lv_xpt2046_create(DRV_GetTouch(), disp);
-
-    /* build your first screen here */
+    (void)arg;
+    /* Must run in task context: pre-kernel the HAL tick is dead, so the
+     * driver's reset-pulse HAL_Delay() would never return. */
+    if (DRV_Setup() != DRV_OK) {
+        for (;;) { }
+    }
+    TouchGFXDisplayDriver_Init();
+    MX_TouchGFX_Process(); /* never returns */
 }
 
 void App_CreateTasks(void)
 {
-    /* osTimerNew(...) for the 1ms LVGL tick, osThreadNew(...) for the GUI
-     * task calling lv_timer_handler() — see the example for a full version */
+    osThreadNew(touchgfx_task, NULL, &k_touchgfx_task_attr);
+    /* plus an osTimerNew(...) firing touchgfxSignalVSync() at ~60 Hz to
+     * pace the render loop — see the example for a full version */
 }
 ```
 
@@ -313,31 +308,17 @@ a GUI task/kernel to consume them.
 
 ---
 
-## LVGL adapter
-
-`DRV_ADAPTER_LVGL=ON` compiles `adapters/lvgl/`:
-
-- `lv_ili9341_create(ili9341_t*, buf1, buf2, buf_bytes)` — replaces
-  `LCDController`. Uses `LV_DISPLAY_RENDER_MODE_PARTIAL`; caller owns the
-  (ping-pong) buffers, sized `hor_res * N_rows * 2`. Flush policy
-  (`DRV_DROP_FRAME_IF_BUSY`, `DRV_DMA_BUSY_WAIT_TIMEOUT_MS`) is in
-  `include/drv/drv_policy.h`.
-- `lv_xpt2046_create(xpt2046_t*, lv_display_t*)` — replaces
-  `TouchController`. Polls `XPT2046_ReadPoint` directly from LVGL's
-  `read_cb`; `lv_xpt2046_set_wake_cb()` lets you wake a sleeping GUI task on
-  PENIRQ.
-- `lv_xpt2046_calibrate(touch, disp, log_cb, out_result)` — 4-point on-screen
-  calibration (replaces `touch_calibrate()`); reports through an optional
-  `log_cb` instead of `printf`, applies the result via
-  `XPT2046_SetCalibration`, and returns it so you can persist it.
-
 ## TouchGFX
 
 See `adapters/touchgfx/README.md` for a skeleton `HAL::flushFrameBuffer`
 override and `TouchController::sampleTouch` implementation — TouchGFX
 projects are generated by TouchGFX Designer, so there's no compiled adapter
-target, just documentation. `drv_constants.h` and `DRV_Setup()` are
-identical to the LVGL case.
+target, just documentation. `drv_constants.h` and `DRV_Setup()` are the same
+as for any other GUI stack; only the Layer 2 glue differs.
+
+Touch calibration is the app's job: measure the raw corner values for your
+panel once, apply them with `XPT2046_SetCalibration`, and read them back with
+`XPT2046_GetCalibration` if you want to persist them.
 
 ---
 
@@ -359,7 +340,7 @@ wall-clock `HAL_Delay`/`HAL_GetTick` stand-in, and the `layering_check` rule
 
 `tests/target/hardware_smoke_checklist.md` — boot, render, rotation, touch
 corners, calibration, a 10-minute soak, plus a concurrent shared-bus stress
-test and a `DRV_DROP_FRAME_IF_BUSY=0` DMA soak. This is the final gate before
+test and a DMA soak. This is the final gate before
 trusting a new board bring-up; run it by hand on target.
 
 ---

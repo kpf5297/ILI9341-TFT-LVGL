@@ -1,4 +1,4 @@
-# App/ — application code + the tft_drivers/lvgl wiring. Never regenerated
+# App/ — application code + the tft_drivers wiring. Never regenerated
 # by CubeMX; everything CubeMX owns lives under Profiles/${PROFILE}/.
 
 set(TFT_DRIVERS_ROOT ${CMAKE_CURRENT_LIST_DIR}/drivers)
@@ -30,11 +30,9 @@ target_compile_definitions(drv_platform INTERFACE
 # ---------------------------------------------------------------------------
 # tft_drivers (vendored under App/drivers/)
 # ---------------------------------------------------------------------------
-# This branch's UI is TouchGFX (generated under Profiles/${PROFILE}/TouchGFX,
-# built by Profiles/${PROFILE}/cmake/touchgfx); LVGL and its adapter are not
-# compiled here — see the lvgl branch/history for that wiring.
+# This project's UI is TouchGFX (generated under Profiles/${PROFILE}/TouchGFX,
+# built by Profiles/${PROFILE}/cmake/touchgfx).
 set(DRV_USE_CMSIS_RTOS2 ON CACHE BOOL "" FORCE)
-set(DRV_ADAPTER_LVGL OFF CACHE BOOL "" FORCE)
 add_subdirectory(${TFT_DRIVERS_ROOT} tft_drivers)
 
 # ---------------------------------------------------------------------------

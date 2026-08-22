@@ -48,7 +48,9 @@
 #define DRV_TOUCH_IRQ_EXTI_LINE      4u     /* T_IRQ is EXTI4 on this board's pinout */
 
 /* ---- Touch calibration defaults (raw ADC values at each screen edge) ----
- * Run lv_xpt2046_calibrate() once to obtain per-panel values. */
+ * Per-panel values are app-supplied: measure the raw corners once and feed
+ * them to XPT2046_SetCalibration() at runtime (XPT2046_GetCalibration()
+ * reads them back for persisting). */
 #define DRV_TOUCH_RAW_X_MIN          262u
 #define DRV_TOUCH_RAW_X_MAX          1872u
 #define DRV_TOUCH_RAW_Y_MIN          230u

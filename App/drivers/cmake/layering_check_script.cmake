@@ -39,9 +39,6 @@ endfunction()
 # No driver file may include CubeMX-generated headers directly.
 _grep_dirs_forbidden("${ROOT}/include;${ROOT}/src;${ROOT}/adapters" "\"main\\.h\"|\"spi\\.h\"|\"gpio\\.h\"" "CubeMX include")
 
-# No layer but adapters/lvgl may include lvgl.h.
-_grep_dirs_forbidden("${ROOT}/include;${ROOT}/src" "lvgl\\.h" "lvgl.h include")
-
 # Layer 1 public headers must be HAL-free.
 _grep_files_forbidden("${ROOT}/include/drv/ili9341.h;${ROOT}/include/drv/xpt2046.h" "HAL_" "HAL_ symbol reference")
 
