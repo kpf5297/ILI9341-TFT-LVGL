@@ -17,6 +17,10 @@ VSync pacing were already handled by
 `Profiles/board_1/TouchGFX/target/TouchGFXDisplayDriver.cpp`,
 `STM32TouchController.cpp`, and `App/app_main.c` respectively.
 
+Verified on hardware: the v3.0.0 Release build was flashed to the
+STM32F446RE (Nucleo-64) and the display, touch, and VSync pacing behave
+identically to v2.x.
+
 ## Breaking changes
 
 | Removed | Replacement |
