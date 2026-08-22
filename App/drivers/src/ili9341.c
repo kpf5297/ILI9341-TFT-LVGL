@@ -29,6 +29,8 @@ struct ili9341 {
 
 static struct ili9341 s_instances[ILI9341_MAX_INSTANCES];
 
+volatile ili9341_debug_t g_ili9341_debug;
+
 static void ili_cmd(ili9341_t *d, uint8_t cmd)
 {
     drv_gpio_write(d->dc, false);
@@ -185,6 +187,8 @@ static void ili_tx_done_hook(void *ctx)
 
     drv_gpio_write(d->cs, true);
     d->flush_busy = false;
+    g_ili9341_debug.busy = 0;
+    g_ili9341_debug.done_count++;
     /* Bus lock release from ISR context: valid for the mutex backends in this
      * tree (bare-metal critical section, and the host mock), matching the
      * plan's required async-flush contract. A CMSIS-RTOS2 mutex is not
@@ -350,6 +354,13 @@ drv_status_t ILI9341_Flush(ili9341_t *d, uint16_t x0, uint16_t y0, uint16_t x1, 
 
     ili_set_window(d, x0, y0, x1, y1);
 
+    g_ili9341_debug.x = x0;
+    g_ili9341_debug.y = y0;
+    g_ili9341_debug.w = (uint16_t)(x1 - x0 + 1u);
+    g_ili9341_debug.h = (uint16_t)(y1 - y0 + 1u);
+    g_ili9341_debug.bytes = len_bytes;
+    g_ili9341_debug.flush_count++;
+
     drv_gpio_write(d->dc, true);
     drv_gpio_write(d->cs, false);
     drv_status_t tx_st = spi_tx_chunked_blocking(d->bus, px, len_bytes, timeout_ms);
@@ -380,6 +391,13 @@ drv_status_t ILI9341_FlushAsync(ili9341_t *d, uint16_t x0, uint16_t y0, uint16_t
     d->done_cb = cb;
     d->done_user = user;
 
+    g_ili9341_debug.x = x0;
+    g_ili9341_debug.y = y0;
+    g_ili9341_debug.w = (uint16_t)(x1 - x0 + 1u);
+    g_ili9341_debug.h = (uint16_t)(y1 - y0 + 1u);
+    g_ili9341_debug.bytes = len_bytes;
+    g_ili9341_debug.flush_count++;
+
     uint32_t max_len = drv_spi_max_dma_len();
     uint32_t first_len = (len_bytes > max_len) ? max_len : len_bytes;
     d->chunk_ptr = px + first_len;
@@ -396,6 +414,7 @@ drv_status_t ILI9341_FlushAsync(ili9341_t *d, uint16_t x0, uint16_t y0, uint16_t
     }
 
     d->flush_busy = true;
+    g_ili9341_debug.busy = 1;
     return DRV_OK;
 }
 

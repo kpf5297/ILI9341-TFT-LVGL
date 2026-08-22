@@ -91,6 +91,25 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/01_Display.elf -v -rst
 
 ---
 
+## Debugging (Cortex-Debug Live Watch)
+
+Two `volatile` globals expose driver state so you can watch it live — without
+halting the core — from the **LIVE WATCH** panel of the bundled Cortex-Debug
+launch configs (`.vscode/launch.json`):
+
+| Global | Source | Fields |
+| --- | --- | --- |
+| `g_xpt2046_debug` | `App/drivers/src/xpt2046.c` | `raw_x/raw_y`, `px/py`, `pen_down`, `read_count`, `press_count` |
+| `g_ili9341_debug` | `App/drivers/src/ili9341.c` | last flush `x/y/w/h`, `bytes`, `flush_count`, `done_count`, `busy` |
+
+`g_xpt2046_debug` updates on every `XPT2046_ReadPoint()` (touch poll);
+`g_ili9341_debug` updates on every `ILI9341_Flush()`/`ILI9341_FlushAsync()`
+(frame block). Both survive optimization (they're `volatile` with external
+linkage) and sit at fixed RAM addresses in Debug and Release builds. Add the
+symbol name to Live Watch and it samples in the background.
+
+---
+
 ## Setting the RTC from a browser (Web Serial)
 
 The RTC is battery-backed (VBAT), so time survives power cycles — it just

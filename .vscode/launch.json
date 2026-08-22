@@ -5,8 +5,9 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // Cortex-Debug with Live Watch: add `g_xpt2046_debug` in the
-            // LIVE WATCH panel to monitor touch coordinates in real time
+            // Cortex-Debug with Live Watch: add `g_xpt2046_debug` (touch)
+            // and `g_ili9341_debug` (display flush) in the LIVE WATCH panel
+            // to monitor touch coordinates and frame throughput in real time
             // without halting the target.
             "name": "Cortex-Debug: Launch (Live Watch)",
             "type": "cortex-debug",
@@ -30,7 +31,8 @@
         },
         {
             // Same, but attaches to the already-running firmware without
-            // reflashing or resetting — best for watching touch behavior.
+            // reflashing or resetting — best for watching touch/display
+            // behavior via `g_xpt2046_debug` and `g_ili9341_debug`.
             "name": "Cortex-Debug: Attach (Live Watch)",
             "type": "cortex-debug",
             "request": "attach",
