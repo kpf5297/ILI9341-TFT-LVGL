@@ -163,6 +163,13 @@ cd tests/host && ./run.sh               # App-level (clock_protocol time-sync)
 The on-target hardware smoke checklist lives at
 `App/drivers/tests/target/hardware_smoke_checklist.md`.
 
+## Related display implementation
+
+For the same STM32F446RE, ILI9341, and XPT2046 hardware using LVGL/SquareLine
+instead of TouchGFX, see the companion
+[LVGL-STM32-ILI9341-Touch](https://github.com/kevinfox-code/LVGL-STM32-ILI9341-Touch)
+repository.
+
 ---
 
 ## License
